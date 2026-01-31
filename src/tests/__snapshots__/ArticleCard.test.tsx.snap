@@ -1,0 +1,383 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ArticleCard Snapshot matches snapshot with all props 1`] = `
+<View
+  accessibilityLabel="Article: Test Article Title"
+  accessibilityRole="button"
+  accessibilityState={
+    {
+      "busy": undefined,
+      "checked": undefined,
+      "disabled": undefined,
+      "expanded": undefined,
+      "selected": undefined,
+    }
+  }
+  accessibilityValue={
+    {
+      "max": undefined,
+      "min": undefined,
+      "now": undefined,
+      "text": undefined,
+    }
+  }
+  accessible={true}
+  collapsable={false}
+  focusable={true}
+  onBlur={[Function]}
+  onClick={[Function]}
+  onFocus={[Function]}
+  onResponderGrant={[Function]}
+  onResponderMove={[Function]}
+  onResponderRelease={[Function]}
+  onResponderTerminate={[Function]}
+  onResponderTerminationRequest={[Function]}
+  onStartShouldSetResponder={[Function]}
+  style={
+    [
+      {
+        "backgroundColor": "#1e293b",
+        "borderColor": "#334155",
+        "borderRadius": 12,
+        "borderWidth": 1,
+        "padding": 16,
+      },
+      false,
+    ]
+  }
+  testID="article-card"
+>
+  <Text
+    numberOfLines={2}
+    style={
+      {
+        "color": "#f1f5f9",
+        "fontSize": 18,
+        "fontWeight": "600",
+        "lineHeight": 24,
+        "marginBottom": 8,
+      }
+    }
+    testID="article-title"
+  >
+    Test Article Title
+  </Text>
+  <Text
+    numberOfLines={3}
+    style={
+      {
+        "color": "#94a3b8",
+        "fontSize": 14,
+        "lineHeight": 20,
+        "marginBottom": 12,
+      }
+    }
+    testID="article-summary"
+  >
+    This is a test summary for the article card component.
+  </Text>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "flexWrap": "wrap",
+        "gap": 8,
+      }
+    }
+    testID="article-tags"
+  >
+    <View
+      style={
+        {
+          "backgroundColor": "#0f172a",
+          "borderRadius": 6,
+          "paddingHorizontal": 10,
+          "paddingVertical": 4,
+        }
+      }
+    >
+      <Text
+        style={
+          {
+            "color": "#64748b",
+            "fontSize": 12,
+            "fontWeight": "500",
+          }
+        }
+      >
+        react
+      </Text>
+    </View>
+    <View
+      style={
+        {
+          "backgroundColor": "#0f172a",
+          "borderRadius": 6,
+          "paddingHorizontal": 10,
+          "paddingVertical": 4,
+        }
+      }
+    >
+      <Text
+        style={
+          {
+            "color": "#64748b",
+            "fontSize": 12,
+            "fontWeight": "500",
+          }
+        }
+      >
+        testing
+      </Text>
+    </View>
+  </View>
+</View>
+`;
+
+exports[`ArticleCard Snapshot matches snapshot with many tags (shows +N) 1`] = `
+<View
+  accessibilityLabel="Article: Test Article Title"
+  accessibilityRole="button"
+  accessibilityState={
+    {
+      "busy": undefined,
+      "checked": undefined,
+      "disabled": undefined,
+      "expanded": undefined,
+      "selected": undefined,
+    }
+  }
+  accessibilityValue={
+    {
+      "max": undefined,
+      "min": undefined,
+      "now": undefined,
+      "text": undefined,
+    }
+  }
+  accessible={true}
+  collapsable={false}
+  focusable={true}
+  onBlur={[Function]}
+  onClick={[Function]}
+  onFocus={[Function]}
+  onResponderGrant={[Function]}
+  onResponderMove={[Function]}
+  onResponderRelease={[Function]}
+  onResponderTerminate={[Function]}
+  onResponderTerminationRequest={[Function]}
+  onStartShouldSetResponder={[Function]}
+  style={
+    [
+      {
+        "backgroundColor": "#1e293b",
+        "borderColor": "#334155",
+        "borderRadius": 12,
+        "borderWidth": 1,
+        "padding": 16,
+      },
+      false,
+    ]
+  }
+  testID="article-card"
+>
+  <Text
+    numberOfLines={2}
+    style={
+      {
+        "color": "#f1f5f9",
+        "fontSize": 18,
+        "fontWeight": "600",
+        "lineHeight": 24,
+        "marginBottom": 8,
+      }
+    }
+    testID="article-title"
+  >
+    Test Article Title
+  </Text>
+  <Text
+    numberOfLines={3}
+    style={
+      {
+        "color": "#94a3b8",
+        "fontSize": 14,
+        "lineHeight": 20,
+        "marginBottom": 12,
+      }
+    }
+    testID="article-summary"
+  >
+    This is a test summary for the article card component.
+  </Text>
+  <View
+    style={
+      {
+        "alignItems": "center",
+        "flexDirection": "row",
+        "flexWrap": "wrap",
+        "gap": 8,
+      }
+    }
+    testID="article-tags"
+  >
+    <View
+      style={
+        {
+          "backgroundColor": "#0f172a",
+          "borderRadius": 6,
+          "paddingHorizontal": 10,
+          "paddingVertical": 4,
+        }
+      }
+    >
+      <Text
+        style={
+          {
+            "color": "#64748b",
+            "fontSize": 12,
+            "fontWeight": "500",
+          }
+        }
+      >
+        react
+      </Text>
+    </View>
+    <View
+      style={
+        {
+          "backgroundColor": "#0f172a",
+          "borderRadius": 6,
+          "paddingHorizontal": 10,
+          "paddingVertical": 4,
+        }
+      }
+    >
+      <Text
+        style={
+          {
+            "color": "#64748b",
+            "fontSize": 12,
+            "fontWeight": "500",
+          }
+        }
+      >
+        native
+      </Text>
+    </View>
+    <View
+      style={
+        {
+          "backgroundColor": "#0f172a",
+          "borderRadius": 6,
+          "paddingHorizontal": 10,
+          "paddingVertical": 4,
+        }
+      }
+    >
+      <Text
+        style={
+          {
+            "color": "#64748b",
+            "fontSize": 12,
+            "fontWeight": "500",
+          }
+        }
+      >
+        typescript
+      </Text>
+    </View>
+    <Text
+      style={
+        {
+          "color": "#64748b",
+          "fontSize": 12,
+        }
+      }
+    >
+      +
+      2
+    </Text>
+  </View>
+</View>
+`;
+
+exports[`ArticleCard Snapshot matches snapshot with no tags 1`] = `
+<View
+  accessibilityLabel="Article: Test Article Title"
+  accessibilityRole="button"
+  accessibilityState={
+    {
+      "busy": undefined,
+      "checked": undefined,
+      "disabled": undefined,
+      "expanded": undefined,
+      "selected": undefined,
+    }
+  }
+  accessibilityValue={
+    {
+      "max": undefined,
+      "min": undefined,
+      "now": undefined,
+      "text": undefined,
+    }
+  }
+  accessible={true}
+  collapsable={false}
+  focusable={true}
+  onBlur={[Function]}
+  onClick={[Function]}
+  onFocus={[Function]}
+  onResponderGrant={[Function]}
+  onResponderMove={[Function]}
+  onResponderRelease={[Function]}
+  onResponderTerminate={[Function]}
+  onResponderTerminationRequest={[Function]}
+  onStartShouldSetResponder={[Function]}
+  style={
+    [
+      {
+        "backgroundColor": "#1e293b",
+        "borderColor": "#334155",
+        "borderRadius": 12,
+        "borderWidth": 1,
+        "padding": 16,
+      },
+      false,
+    ]
+  }
+  testID="article-card"
+>
+  <Text
+    numberOfLines={2}
+    style={
+      {
+        "color": "#f1f5f9",
+        "fontSize": 18,
+        "fontWeight": "600",
+        "lineHeight": 24,
+        "marginBottom": 8,
+      }
+    }
+    testID="article-title"
+  >
+    Test Article Title
+  </Text>
+  <Text
+    numberOfLines={3}
+    style={
+      {
+        "color": "#94a3b8",
+        "fontSize": 14,
+        "lineHeight": 20,
+        "marginBottom": 12,
+      }
+    }
+    testID="article-summary"
+  >
+    This is a test summary for the article card component.
+  </Text>
+</View>
+`;
