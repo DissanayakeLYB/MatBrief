@@ -66,6 +66,9 @@ export function LoginScreen({ navigation }: LoginScreenProps) {
       // Success! RootNavigator will automatically switch to AppNavigator
       // because it's listening to auth state changes.
       // No manual navigation needed here.
+    } catch (err) {
+      // Handle unexpected errors (network failure, etc.)
+      setError('Unable to connect. Please check your internet connection.');
     } finally {
       setIsLoading(false);
     }

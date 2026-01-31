@@ -51,16 +51,22 @@ export function ArticleScreen({ navigation, route }: ArticleScreenProps) {
     setIsLoading(true);
     setError(null);
 
-    const result = await fetchArticleById(articleId);
+    try {
+      const result = await fetchArticleById(articleId);
 
-    if (result.error) {
-      setError(result.error.message);
+      if (result.error) {
+        setError(result.error.message);
+        setArticle(null);
+      } else {
+        setArticle(result.data);
+      }
+    } catch (err) {
+      // Handle unexpected errors (network failure, etc.)
+      setError('Unable to connect. Please check your internet connection.');
       setArticle(null);
-    } else {
-      setArticle(result.data);
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   }, [articleId]);
 
   // Fetch article on mount

@@ -54,17 +54,23 @@ export function FeedScreen({ navigation }: FeedScreenProps) {
     }
     setError(null);
 
-    const result = await fetchArticles();
+    try {
+      const result = await fetchArticles();
 
-    if (result.error) {
-      setError(result.error.message);
+      if (result.error) {
+        setError(result.error.message);
+        setArticles([]);
+      } else {
+        setArticles(result.data);
+      }
+    } catch (err) {
+      // Handle unexpected errors (network failure, etc.)
+      setError('Unable to connect. Please check your internet connection.');
       setArticles([]);
-    } else {
-      setArticles(result.data);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
     }
-
-    setIsLoading(false);
-    setIsRefreshing(false);
   }, []);
 
   // Fetch articles on mount
@@ -92,13 +98,23 @@ export function FeedScreen({ navigation }: FeedScreenProps) {
   const handleSignOut = async () => {
     setIsSigningOut(true);
     
-    const result = await signOut();
-    
-    if (result.error) {
+    try {
+      const result = await signOut();
+      
+      if (result.error) {
+        setIsSigningOut(false);
+        Alert.alert(
+          'Sign Out Failed',
+          result.error.message,
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+    } catch (err) {
       setIsSigningOut(false);
       Alert.alert(
         'Sign Out Failed',
-        result.error.message,
+        'Unable to connect. Please check your internet connection.',
         [{ text: 'OK' }]
       );
       return;

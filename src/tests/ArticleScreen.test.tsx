@@ -315,4 +315,44 @@ describe('ArticleScreen', () => {
       });
     });
   });
+
+  describe('Network Error Handling', () => {
+    it('shows network error when fetchArticleById throws', async () => {
+      // Simulate a network failure by rejecting the promise
+      mockFetchArticleById.mockRejectedValue(new Error('Network request failed'));
+
+      render(<ArticleScreen navigation={mockNavigation} route={mockRoute} />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('error-state')).toBeTruthy();
+        expect(screen.getByText('Unable to connect. Please check your internet connection.')).toBeTruthy();
+      });
+    });
+
+    it('allows retry after network error from thrown exception', async () => {
+      // First call throws
+      mockFetchArticleById.mockRejectedValueOnce(new Error('Network request failed'));
+      // Second call succeeds
+      mockFetchArticleById.mockResolvedValueOnce({
+        data: mockArticle,
+        error: null,
+      });
+
+      render(<ArticleScreen navigation={mockNavigation} route={mockRoute} />);
+
+      // Wait for error state
+      await waitFor(() => {
+        expect(screen.getByTestId('error-state')).toBeTruthy();
+      });
+
+      // Press retry
+      fireEvent.press(screen.getByText('Try Again'));
+
+      // Should show article now
+      await waitFor(() => {
+        expect(screen.getByText('Test Article Title')).toBeTruthy();
+        expect(screen.queryByTestId('error-state')).toBeNull();
+      });
+    });
+  });
 });

@@ -383,4 +383,72 @@ describe('SignupScreen', () => {
       });
     });
   });
+
+  describe('Network Error Handling', () => {
+    it('displays network error when signUp throws', async () => {
+      // Simulate a network failure by rejecting the promise
+      mockSignUp.mockRejectedValue(new Error('Network request failed'));
+
+      render(<SignupScreen navigation={mockNavigation} />);
+
+      fireEvent.changeText(screen.getByTestId('email-input'), 'test@example.com');
+      fireEvent.changeText(screen.getByTestId('password-input'), 'password123');
+      fireEvent.changeText(screen.getByTestId('confirm-password-input'), 'password123');
+      fireEvent.press(screen.getByTestId('signup-button'));
+
+      await waitFor(() => {
+        expect(screen.getByTestId('error-message')).toBeTruthy();
+        expect(screen.getByText('Unable to connect. Please check your internet connection.')).toBeTruthy();
+      });
+    });
+
+    it('re-enables form after network error', async () => {
+      mockSignUp.mockRejectedValue(new Error('Network request failed'));
+
+      render(<SignupScreen navigation={mockNavigation} />);
+
+      fireEvent.changeText(screen.getByTestId('email-input'), 'test@example.com');
+      fireEvent.changeText(screen.getByTestId('password-input'), 'password123');
+      fireEvent.changeText(screen.getByTestId('confirm-password-input'), 'password123');
+      fireEvent.press(screen.getByTestId('signup-button'));
+
+      await waitFor(() => {
+        const button = screen.getByTestId('signup-button');
+        expect(button.props.accessibilityState?.disabled).toBe(false);
+        
+        const emailInput = screen.getByTestId('email-input');
+        expect(emailInput.props.editable).toBe(true);
+      });
+    });
+
+    it('allows retry after network error', async () => {
+      // First call fails with network error
+      mockSignUp.mockRejectedValueOnce(new Error('Network request failed'));
+      // Second call succeeds
+      mockSignUp.mockResolvedValueOnce({
+        data: { user: { id: '123' } as any },
+        error: null,
+      });
+
+      render(<SignupScreen navigation={mockNavigation} />);
+
+      fireEvent.changeText(screen.getByTestId('email-input'), 'test@example.com');
+      fireEvent.changeText(screen.getByTestId('password-input'), 'password123');
+      fireEvent.changeText(screen.getByTestId('confirm-password-input'), 'password123');
+      
+      // First attempt - network error
+      fireEvent.press(screen.getByTestId('signup-button'));
+      
+      await waitFor(() => {
+        expect(screen.getByText('Unable to connect. Please check your internet connection.')).toBeTruthy();
+      });
+
+      // Second attempt - success
+      fireEvent.press(screen.getByTestId('signup-button'));
+      
+      await waitFor(() => {
+        expect(screen.queryByTestId('error-message')).toBeNull();
+      });
+    });
+  });
 });

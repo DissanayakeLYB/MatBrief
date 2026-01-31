@@ -108,6 +108,9 @@ export function SignupScreen({ navigation }: SignupScreenProps) {
 
       // Success! RootNavigator will automatically switch to AppNavigator
       // because it's listening to auth state changes.
+    } catch (err) {
+      // Handle unexpected errors (network failure, etc.)
+      setError('Unable to connect. Please check your internet connection.');
     } finally {
       setIsLoading(false);
     }

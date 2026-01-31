@@ -502,4 +502,65 @@ describe('FeedScreen', () => {
       });
     });
   });
+
+  describe('Network Error Handling', () => {
+    it('shows network error when fetchArticles throws', async () => {
+      // Simulate a network failure by rejecting the promise
+      mockFetchArticles.mockRejectedValue(new Error('Network request failed'));
+
+      render(<FeedScreen navigation={mockNavigation} />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('error-state')).toBeTruthy();
+        expect(screen.getByText('Unable to connect. Please check your internet connection.')).toBeTruthy();
+      });
+    });
+
+    it('allows retry after network error from thrown exception', async () => {
+      // First call throws
+      mockFetchArticles.mockRejectedValueOnce(new Error('Network request failed'));
+      // Second call succeeds
+      mockFetchArticles.mockResolvedValueOnce({
+        data: mockArticles,
+        error: null,
+      });
+
+      render(<FeedScreen navigation={mockNavigation} />);
+
+      // Wait for error state
+      await waitFor(() => {
+        expect(screen.getByTestId('error-state')).toBeTruthy();
+      });
+
+      // Press retry
+      fireEvent.press(screen.getByText('Try Again'));
+
+      // Should show articles now
+      await waitFor(() => {
+        expect(screen.getByText('First Article')).toBeTruthy();
+        expect(screen.queryByTestId('error-state')).toBeNull();
+      });
+    });
+
+    it('shows network error when signOut throws', async () => {
+      mockFetchArticles.mockResolvedValue({ data: mockArticles, error: null });
+      mockSignOut.mockRejectedValue(new Error('Network request failed'));
+
+      render(<FeedScreen navigation={mockNavigation} />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('sign-out-button')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByTestId('sign-out-button'));
+
+      await waitFor(() => {
+        expect(Alert.alert).toHaveBeenCalledWith(
+          'Sign Out Failed',
+          'Unable to connect. Please check your internet connection.',
+          [{ text: 'OK' }]
+        );
+      });
+    });
+  });
 });
