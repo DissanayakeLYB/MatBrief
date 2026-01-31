@@ -1,54 +1,186 @@
 /**
  * FeedScreen
  * 
- * The main screen showing a list of articles/content.
- * This is a placeholder — we'll add the full UI in the next phase.
+ * The main screen showing a scrollable list of articles.
+ * 
+ * Features:
+ * - Fetches articles from Supabase on mount
+ * - Pull-to-refresh support
+ * - Loading, empty, and error state handling
+ * - Sign out functionality
  */
 
-import { StyleSheet, Text, View, Pressable } from 'react-native';
+import { useEffect, useState, useCallback } from 'react';
+import {
+  StyleSheet,
+  Text,
+  View,
+  FlatList,
+  Pressable,
+  ActivityIndicator,
+  RefreshControl,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/AppNavigator';
-import { signOut } from '../services';
+import { signOut, fetchArticles } from '../services';
+import { ArticleCard } from '../components';
+import type { Article } from '../types';
 
 type FeedScreenProps = {
   navigation: NativeStackNavigationProp<AppStackParamList, 'Feed'>;
 };
 
 export function FeedScreen({ navigation }: FeedScreenProps) {
+  // Data state
+  const [articles, setArticles] = useState<Article[]>([]);
+  
+  // UI state
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  /**
+   * Load articles from the service.
+   * Called on mount and pull-to-refresh.
+   */
+  const loadArticles = useCallback(async (showRefreshIndicator = false) => {
+    if (showRefreshIndicator) {
+      setIsRefreshing(true);
+    } else {
+      setIsLoading(true);
+    }
+    setError(null);
+
+    const result = await fetchArticles();
+
+    if (result.error) {
+      setError(result.error.message);
+      setArticles([]);
+    } else {
+      setArticles(result.data);
+    }
+
+    setIsLoading(false);
+    setIsRefreshing(false);
+  }, []);
+
+  // Fetch articles on mount
+  useEffect(() => {
+    loadArticles();
+  }, [loadArticles]);
+
+  /**
+   * Handle pull-to-refresh.
+   */
+  const handleRefresh = useCallback(() => {
+    loadArticles(true);
+  }, [loadArticles]);
+
+  /**
+   * Handle sign out button press.
+   */
   const handleSignOut = async () => {
     await signOut();
-    // Navigation will automatically switch to Auth stack
+    // Navigation automatically switches to Auth stack
     // because RootNavigator listens to auth state changes
   };
 
+  /**
+   * Handle article card press.
+   */
+  const handleArticlePress = (articleId: string) => {
+    navigation.navigate('Article', { articleId });
+  };
+
+  /**
+   * Render a single article card.
+   */
+  const renderArticle = ({ item }: { item: Article }) => (
+    <ArticleCard
+      title={item.title}
+      summary={item.summary}
+      tags={item.tags}
+      onPress={() => handleArticlePress(item.id)}
+    />
+  );
+
+  /**
+   * Render loading state.
+   */
+  const renderLoading = () => (
+    <View style={styles.centerContainer} testID="loading-indicator">
+      <ActivityIndicator size="large" color="#3b82f6" />
+      <Text style={styles.loadingText}>Loading articles...</Text>
+    </View>
+  );
+
+  /**
+   * Render error state with retry button.
+   */
+  const renderError = () => (
+    <View style={styles.centerContainer} testID="error-state">
+      <Text style={styles.errorTitle}>Unable to load articles</Text>
+      <Text style={styles.errorMessage}>{error}</Text>
+      <Pressable style={styles.retryButton} onPress={() => loadArticles()}>
+        <Text style={styles.retryButtonText}>Try Again</Text>
+      </Pressable>
+    </View>
+  );
+
+  /**
+   * Render empty state when no articles exist.
+   */
+  const renderEmpty = () => (
+    <View style={styles.centerContainer} testID="empty-state">
+      <Text style={styles.emptyTitle}>No articles yet</Text>
+      <Text style={styles.emptyMessage}>
+        Pull down to refresh or check back later.
+      </Text>
+    </View>
+  );
+
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>Feed</Text>
-        <Pressable style={styles.signOutButton} onPress={handleSignOut}>
+        <Pressable
+          style={styles.signOutButton}
+          onPress={handleSignOut}
+          testID="sign-out-button"
+        >
           <Text style={styles.signOutText}>Sign Out</Text>
         </Pressable>
       </View>
-      
-      <View style={styles.content}>
-        {/* Sample article cards */}
-        <Pressable 
-          style={styles.card}
-          onPress={() => navigation.navigate('Article', { articleId: '1' })}
-        >
-          <Text style={styles.cardTitle}>Sample Article 1</Text>
-          <Text style={styles.cardDescription}>Tap to view article details</Text>
-        </Pressable>
 
-        <Pressable 
-          style={styles.card}
-          onPress={() => navigation.navigate('Article', { articleId: '2' })}
-        >
-          <Text style={styles.cardTitle}>Sample Article 2</Text>
-          <Text style={styles.cardDescription}>Tap to view article details</Text>
-        </Pressable>
-      </View>
+      {/* Content */}
+      {isLoading ? (
+        renderLoading()
+      ) : error ? (
+        renderError()
+      ) : (
+        <FlatList
+          data={articles}
+          keyExtractor={(item) => item.id}
+          renderItem={renderArticle}
+          contentContainerStyle={[
+            styles.listContent,
+            articles.length === 0 && styles.listContentEmpty,
+          ]}
+          ListEmptyComponent={renderEmpty}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={handleRefresh}
+              tintColor="#3b82f6"
+              colors={['#3b82f6']}
+            />
+          }
+          showsVerticalScrollIndicator={false}
+          testID="articles-list"
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -62,7 +194,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#1e293b',
@@ -82,24 +214,56 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
     fontSize: 14,
   },
-  content: {
+  listContent: {
+    padding: 16,
+    gap: 12,
+  },
+  listContentEmpty: {
     flex: 1,
-    padding: 24,
-    gap: 16,
   },
-  card: {
-    backgroundColor: '#1e293b',
-    borderRadius: 12,
-    padding: 20,
+  centerContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
   },
-  cardTitle: {
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: '#94a3b8',
+  },
+  errorTitle: {
     fontSize: 18,
     fontWeight: '600',
     color: '#f8fafc',
-    marginBottom: 4,
+    marginBottom: 8,
   },
-  cardDescription: {
+  errorMessage: {
     fontSize: 14,
     color: '#94a3b8',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  retryButton: {
+    backgroundColor: '#3b82f6',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#f8fafc',
+    marginBottom: 8,
+  },
+  emptyMessage: {
+    fontSize: 14,
+    color: '#94a3b8',
+    textAlign: 'center',
   },
 });
