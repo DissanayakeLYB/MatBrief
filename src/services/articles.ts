@@ -130,3 +130,57 @@ export async function fetchArticles(): Promise<ArticleResult<Article[]>> {
 
   return { data: articles, error: null };
 }
+
+/**
+ * Fetches a single article by ID.
+ * 
+ * @param id - The article's unique identifier
+ * @returns The article or an error
+ * 
+ * @example
+ * const { data, error } = await fetchArticleById('123');
+ * if (error) {
+ *   if (error.code === 'not_found') {
+ *     showNotFound();
+ *   }
+ *   return;
+ * }
+ * setArticle(data);
+ */
+export async function fetchArticleById(id: string): Promise<ArticleResult<Article>> {
+  const { data, error } = await supabase
+    .from('articles')
+    .select('id, title, summary, tags, external_url, created_at')
+    .eq('id', id)
+    .single();
+
+  if (error) {
+    // Handle "no rows returned" as not found
+    if (error.code === 'PGRST116') {
+      return {
+        data: null,
+        error: { code: 'not_found', message: 'Article not found.' },
+      };
+    }
+    return { data: null, error: normalizeArticleError(error) };
+  }
+
+  if (!data) {
+    return {
+      data: null,
+      error: { code: 'not_found', message: 'Article not found.' },
+    };
+  }
+
+  // Transform snake_case to camelCase
+  const article: Article = {
+    id: data.id,
+    title: data.title,
+    summary: data.summary,
+    tags: data.tags ?? [],
+    externalUrl: data.external_url,
+    createdAt: data.created_at,
+  };
+
+  return { data: article, error: null };
+}

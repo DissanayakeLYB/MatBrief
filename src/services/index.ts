@@ -22,6 +22,7 @@ export {
 
 export {
   fetchArticles,
+  fetchArticleById,
   type ArticleResult,
   type ArticleError,
   type ArticleErrorCode,
