@@ -41,22 +41,40 @@ jest.mock('react-native-safe-area-context', () => {
  * Mock @react-navigation/native-stack
  * 
  * The native stack navigator uses native screen transitions.
- * We create a mock that:
- * - Navigator: Renders all Screen children
- * - Screen: Renders the component prop if provided
+ * We create a mock that only renders the initial screen (first child),
+ * mimicking real navigator behavior.
  */
 jest.mock('@react-navigation/native-stack', () => {
   const mockReact = require('react');
   
   return {
     createNativeStackNavigator: () => ({
-      // Navigator renders all its Screen children
-      Navigator: ({ children }: { children: unknown }) => {
-        return mockReact.createElement(mockReact.Fragment, null, children);
+      // Navigator renders only the first Screen child (the initial route)
+      Navigator: ({ children, initialRouteName }: { children: React.ReactNode; initialRouteName?: string }) => {
+        const childArray = mockReact.Children.toArray(children);
+        
+        // Find the screen matching initialRouteName, or use the first screen
+        const initialScreen = initialRouteName
+          ? childArray.find((child: { props?: { name?: string } }) => 
+              child?.props?.name === initialRouteName
+            ) || childArray[0]
+          : childArray[0];
+        
+        return initialScreen || null;
       },
-      // Screen renders the component passed to it
-      Screen: ({ component: Component }: { component: React.ComponentType }) => {
-        return mockReact.createElement(Component);
+      // Screen renders the component passed to it with mock navigation/route
+      Screen: ({ component: Component, name }: { component: React.ComponentType<unknown>; name: string }) => {
+        const mockNavigation = {
+          navigate: jest.fn(),
+          goBack: jest.fn(),
+          reset: jest.fn(),
+          setOptions: jest.fn(),
+        };
+        const mockRoute = {
+          name,
+          params: { articleId: 'mock-article-id' }, // Default params for screens that need them
+        };
+        return mockReact.createElement(Component, { navigation: mockNavigation, route: mockRoute });
       },
     }),
   };
@@ -97,6 +115,33 @@ jest.mock('react-native-screens', () => ({
   enableScreens: jest.fn(),
   enableFreeze: jest.fn(),
   screensEnabled: () => true,
+}));
+
+/**
+ * Mock the Supabase client
+ * 
+ * Since supabase.ts throws if env vars are missing, we mock the entire module.
+ * Individual tests can override specific methods as needed.
+ */
+jest.mock('../services/supabase', () => ({
+  supabase: {
+    auth: {
+      getSession: jest.fn().mockResolvedValue({ data: { session: null }, error: null }),
+      getUser: jest.fn().mockResolvedValue({ data: { user: null }, error: null }),
+      signUp: jest.fn(),
+      signInWithPassword: jest.fn(),
+      signOut: jest.fn().mockResolvedValue({ error: null }),
+      onAuthStateChange: jest.fn().mockReturnValue({
+        data: { subscription: { unsubscribe: jest.fn() } },
+      }),
+    },
+    from: jest.fn().mockReturnValue({
+      select: jest.fn().mockReturnThis(),
+      insert: jest.fn().mockReturnThis(),
+      update: jest.fn().mockReturnThis(),
+      delete: jest.fn().mockReturnThis(),
+    }),
+  },
 }));
 
 /**

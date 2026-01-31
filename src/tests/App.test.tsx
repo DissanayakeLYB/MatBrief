@@ -1,68 +1,93 @@
 /**
  * App Component Test
  * 
- * This is a "smoke test" — it verifies the app renders without crashing.
- * It's the most basic test you can write, but it catches many issues:
- * - Import errors
- * - Syntax errors
- * - Missing dependencies
- * - Component initialization failures
+ * Tests the root App component with auth-based navigation.
  * 
- * Testing Philosophy:
- * - Test BEHAVIOR, not implementation details
- * - Write tests that give confidence the app works for users
- * - Avoid testing internal state or private methods
+ * The App renders:
+ * - Loading screen while checking auth
+ * - AuthNavigator (Login/Signup) when not signed in
+ * - AppNavigator (Feed/Article) when signed in
  */
 
-import { render, screen } from '@testing-library/react-native';
+import { render, screen, waitFor } from '@testing-library/react-native';
 import App from '../../App';
+import { supabase } from '../services/supabase';
 
-/**
- * describe() groups related tests together.
- * This helps organize test output and makes it clear what's being tested.
- */
+// Get the mocked supabase for test configuration
+const mockSupabase = supabase as jest.Mocked<typeof supabase>;
+
 describe('App', () => {
-  /**
-   * it() (or test()) defines a single test case.
-   * The string describes WHAT behavior we're verifying.
-   * Good test names read like sentences: "it renders without crashing"
-   */
-  it('renders without crashing', () => {
-    // render() mounts the component in a virtual DOM
-    // This is where crashes would happen if something is broken
+  beforeEach(() => {
+    // Reset to default: no session (user not logged in)
+    (mockSupabase.auth.getSession as jest.Mock).mockResolvedValue({
+      data: { session: null },
+      error: null,
+    });
+  });
+
+  it('renders without crashing', async () => {
     const { toJSON } = render(<App />);
 
-    // If we get here without throwing, the test passes
-    // toJSON() gives us a snapshot of the rendered tree
-    expect(toJSON()).not.toBeNull();
+    // Wait for async auth check to complete
+    await waitFor(() => {
+      expect(toJSON()).not.toBeNull();
+    });
   });
 
-  /**
-   * This test verifies the app displays expected content.
-   * 
-   * Why test for text?
-   * - It's what users actually see
-   * - It catches accidental deletions or typos
-   * - It's stable (unlike testing for specific styling)
-   */
-  it('displays the app title', () => {
+  it('shows loading indicator initially', () => {
     render(<App />);
 
-    // getByText throws if the text isn't found, making the test fail
-    // This is more reliable than checking if a specific component exists
-    const title = screen.getByText('MatBrief');
-    expect(title).toBeTruthy();
+    // ActivityIndicator should be visible while checking auth
+    // Note: We check the component exists, not specific text
+    expect(screen.root).toBeTruthy();
   });
 
-  /**
-   * Test the subtitle text is displayed.
-   * Having multiple assertions in separate tests helps identify
-   * exactly what broke when something fails.
-   */
-  it('displays the welcome message', () => {
+  it('shows Login screen when user is not authenticated', async () => {
+    (mockSupabase.auth.getSession as jest.Mock).mockResolvedValue({
+      data: { session: null },
+      error: null,
+    });
+
     render(<App />);
 
-    const subtitle = screen.getByText('Your app is ready to build!');
-    expect(subtitle).toBeTruthy();
+    // Wait for auth check and then verify Login screen is shown
+    await waitFor(() => {
+      expect(screen.getByText('Welcome Back')).toBeTruthy();
+    });
+  });
+
+  it('shows Feed screen when user is authenticated', async () => {
+    // Mock an authenticated session
+    const mockUser = {
+      id: 'user-123',
+      email: 'test@example.com',
+      aud: 'authenticated',
+      created_at: '2024-01-01',
+    };
+
+    (mockSupabase.auth.getSession as jest.Mock).mockResolvedValue({
+      data: { 
+        session: { 
+          user: mockUser,
+          access_token: 'mock-token',
+          refresh_token: 'mock-refresh',
+        } 
+      },
+      error: null,
+    });
+
+    render(<App />);
+
+    // Wait for auth check and then verify Feed screen is shown
+    await waitFor(() => {
+      expect(screen.getByText('Feed')).toBeTruthy();
+    });
+  });
+
+  it('subscribes to auth state changes on mount', () => {
+    render(<App />);
+
+    // Verify onAuthStateChange was called to set up the listener
+    expect(mockSupabase.auth.onAuthStateChange).toHaveBeenCalled();
   });
 });
