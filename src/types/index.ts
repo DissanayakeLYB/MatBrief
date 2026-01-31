@@ -2,9 +2,19 @@
  * Types barrel export
  * 
  * Re-exports all type definitions from the types folder.
+ * 
+ * Usage:
+ * ```typescript
+ * import { Article, ArticleInsert } from '../types';
+ * ```
+ * 
  * Note: env.d.ts is a declaration file and doesn't need to be exported.
  */
 
-// Future exports:
-// export type { Database } from './database';
-// export type { User, Profile } from './models';
+// Article types
+export type {
+  Article,
+  ArticleInsert,
+  ArticleUpdate,
+  ArticleListItem,
+} from './article';
