@@ -12,9 +12,13 @@
  */
 
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
+import { Alert } from 'react-native';
 import { FeedScreen } from '../screens/FeedScreen';
 import * as articlesService from '../services/articles';
 import * as authService from '../services/auth';
+
+// Mock Alert
+jest.spyOn(Alert, 'alert');
 
 // Mock the services
 jest.mock('../services/articles');
@@ -264,6 +268,207 @@ describe('FeedScreen', () => {
 
       await waitFor(() => {
         expect(mockSignOut).toHaveBeenCalledTimes(1);
+      });
+    });
+
+    it('shows loading indicator while signing out', async () => {
+      mockFetchArticles.mockResolvedValue({ data: mockArticles, error: null });
+      
+      // Make signOut hang to test loading state
+      let resolveSignOut: (value: any) => void;
+      mockSignOut.mockImplementation(
+        () => new Promise((resolve) => { resolveSignOut = resolve; })
+      );
+
+      render(<FeedScreen navigation={mockNavigation} />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('sign-out-button')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByTestId('sign-out-button'));
+
+      // Loading indicator should appear
+      await waitFor(() => {
+        expect(screen.getByTestId('sign-out-loading')).toBeTruthy();
+      });
+
+      // Button should be disabled
+      const button = screen.getByTestId('sign-out-button');
+      expect(button.props.accessibilityState?.disabled).toBe(true);
+
+      // Clean up
+      resolveSignOut!({ data: null, error: null });
+    });
+
+    it('disables sign out button while signing out', async () => {
+      mockFetchArticles.mockResolvedValue({ data: mockArticles, error: null });
+      
+      let resolveSignOut: (value: any) => void;
+      mockSignOut.mockImplementation(
+        () => new Promise((resolve) => { resolveSignOut = resolve; })
+      );
+
+      render(<FeedScreen navigation={mockNavigation} />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('sign-out-button')).toBeTruthy();
+      });
+
+      // Press sign out
+      fireEvent.press(screen.getByTestId('sign-out-button'));
+
+      // Try to press again - should not trigger another call
+      fireEvent.press(screen.getByTestId('sign-out-button'));
+
+      await waitFor(() => {
+        expect(mockSignOut).toHaveBeenCalledTimes(1);
+      });
+
+      resolveSignOut!({ data: null, error: null });
+    });
+
+    it('shows alert when sign out fails', async () => {
+      mockFetchArticles.mockResolvedValue({ data: mockArticles, error: null });
+      mockSignOut.mockResolvedValue({
+        data: null,
+        error: { code: 'network_error', message: 'Network error occurred' },
+      });
+
+      render(<FeedScreen navigation={mockNavigation} />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('sign-out-button')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByTestId('sign-out-button'));
+
+      await waitFor(() => {
+        expect(Alert.alert).toHaveBeenCalledWith(
+          'Sign Out Failed',
+          'Network error occurred',
+          [{ text: 'OK' }]
+        );
+      });
+    });
+
+    it('re-enables button after sign out error', async () => {
+      mockFetchArticles.mockResolvedValue({ data: mockArticles, error: null });
+      mockSignOut.mockResolvedValue({
+        data: null,
+        error: { code: 'network_error', message: 'Error' },
+      });
+
+      render(<FeedScreen navigation={mockNavigation} />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('sign-out-button')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByTestId('sign-out-button'));
+
+      // Wait for error handling to complete
+      await waitFor(() => {
+        expect(Alert.alert).toHaveBeenCalled();
+      });
+
+      // Button should be re-enabled
+      await waitFor(() => {
+        const button = screen.getByTestId('sign-out-button');
+        expect(button.props.accessibilityState?.disabled).toBe(false);
+        expect(screen.getByText('Sign Out')).toBeTruthy();
+      });
+    });
+
+    it('allows retry after sign out error', async () => {
+      mockFetchArticles.mockResolvedValue({ data: mockArticles, error: null });
+      
+      // First call fails, second succeeds
+      mockSignOut
+        .mockResolvedValueOnce({
+          data: null,
+          error: { code: 'network_error', message: 'Error' },
+        })
+        .mockResolvedValueOnce({ data: null, error: null });
+
+      render(<FeedScreen navigation={mockNavigation} />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('sign-out-button')).toBeTruthy();
+      });
+
+      // First attempt fails
+      fireEvent.press(screen.getByTestId('sign-out-button'));
+
+      await waitFor(() => {
+        expect(Alert.alert).toHaveBeenCalled();
+      });
+
+      // Second attempt
+      fireEvent.press(screen.getByTestId('sign-out-button'));
+
+      await waitFor(() => {
+        expect(mockSignOut).toHaveBeenCalledTimes(2);
+      });
+    });
+  });
+
+  describe('Navigation Reset After Logout', () => {
+    /**
+     * These tests verify the logout → login redirect behavior.
+     * 
+     * Note: The actual navigation reset happens in RootNavigator,
+     * which listens to Supabase auth state changes. When signOut()
+     * succeeds, Supabase emits SIGNED_OUT event, RootNavigator
+     * sets user to null, and renders AuthNavigator instead of AppNavigator.
+     * 
+     * We test:
+     * 1. signOut is called correctly
+     * 2. No navigation methods are called directly (handled by RootNavigator)
+     * 3. Component behavior during/after signOut
+     */
+
+    it('does not call navigation.navigate after successful logout', async () => {
+      mockFetchArticles.mockResolvedValue({ data: mockArticles, error: null });
+      mockSignOut.mockResolvedValue({ data: null, error: null });
+
+      render(<FeedScreen navigation={mockNavigation} />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('sign-out-button')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByTestId('sign-out-button'));
+
+      await waitFor(() => {
+        expect(mockSignOut).toHaveBeenCalled();
+      });
+
+      // Navigation should NOT be called - RootNavigator handles this
+      expect(mockNavigation.navigate).not.toHaveBeenCalledWith('Login');
+      expect(mockNavigation.reset).not.toHaveBeenCalled();
+    });
+
+    it('completes signOut call before component would unmount', async () => {
+      mockFetchArticles.mockResolvedValue({ data: mockArticles, error: null });
+      
+      let signOutCompleted = false;
+      mockSignOut.mockImplementation(async () => {
+        await new Promise(resolve => setTimeout(resolve, 10));
+        signOutCompleted = true;
+        return { data: null, error: null };
+      });
+
+      render(<FeedScreen navigation={mockNavigation} />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('sign-out-button')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByTestId('sign-out-button'));
+
+      await waitFor(() => {
+        expect(signOutCompleted).toBe(true);
       });
     });
   });

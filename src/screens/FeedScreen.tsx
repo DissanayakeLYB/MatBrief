@@ -19,6 +19,7 @@ import {
   Pressable,
   ActivityIndicator,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -38,6 +39,7 @@ export function FeedScreen({ navigation }: FeedScreenProps) {
   // UI state
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   /**
@@ -79,11 +81,32 @@ export function FeedScreen({ navigation }: FeedScreenProps) {
 
   /**
    * Handle sign out button press.
+   * 
+   * Flow:
+   * 1. Show loading state (disable button)
+   * 2. Call signOut service
+   * 3. If error, show alert
+   * 4. If success, RootNavigator automatically switches to Auth stack
+   *    because it listens to Supabase auth state changes
    */
   const handleSignOut = async () => {
-    await signOut();
-    // Navigation automatically switches to Auth stack
-    // because RootNavigator listens to auth state changes
+    setIsSigningOut(true);
+    
+    const result = await signOut();
+    
+    if (result.error) {
+      setIsSigningOut(false);
+      Alert.alert(
+        'Sign Out Failed',
+        result.error.message,
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+    
+    // Success! RootNavigator will automatically navigate to Login
+    // because onAuthStateChange fires with SIGNED_OUT event.
+    // We don't reset isSigningOut here because the component will unmount.
   };
 
   /**
@@ -146,11 +169,19 @@ export function FeedScreen({ navigation }: FeedScreenProps) {
       <View style={styles.header}>
         <Text style={styles.title}>Feed</Text>
         <Pressable
-          style={styles.signOutButton}
+          style={[
+            styles.signOutButton,
+            isSigningOut && styles.signOutButtonDisabled,
+          ]}
           onPress={handleSignOut}
+          disabled={isSigningOut}
           testID="sign-out-button"
         >
-          <Text style={styles.signOutText}>Sign Out</Text>
+          {isSigningOut ? (
+            <ActivityIndicator size="small" color="#94a3b8" testID="sign-out-loading" />
+          ) : (
+            <Text style={styles.signOutText}>Sign Out</Text>
+          )}
         </Pressable>
       </View>
 
@@ -209,6 +240,12 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     backgroundColor: '#1e293b',
     borderRadius: 6,
+    minWidth: 70,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  signOutButtonDisabled: {
+    opacity: 0.6,
   },
   signOutText: {
     color: '#94a3b8',
