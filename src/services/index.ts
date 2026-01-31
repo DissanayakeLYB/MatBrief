@@ -9,3 +9,13 @@
  */
 
 export { supabase } from './supabase';
+
+export {
+  signUp,
+  signIn,
+  signOut,
+  getCurrentUser,
+  type AuthResult,
+  type AuthError,
+  type AuthErrorCode,
+} from './auth';
