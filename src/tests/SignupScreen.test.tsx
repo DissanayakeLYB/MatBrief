@@ -243,7 +243,7 @@ describe('SignupScreen', () => {
       });
     });
 
-    it('does not show error on successful signup', async () => {
+    it('shows success screen after successful signup', async () => {
       mockSignUp.mockResolvedValue({
         data: { user: { id: '123', email: 'test@example.com' } as any },
         error: null,
@@ -257,10 +257,60 @@ describe('SignupScreen', () => {
       fireEvent.press(screen.getByTestId('signup-button'));
 
       await waitFor(() => {
-        expect(mockSignUp).toHaveBeenCalled();
+        expect(screen.getByTestId('signup-success')).toBeTruthy();
       });
 
-      expect(screen.queryByTestId('error-message')).toBeNull();
+      // Check success screen content
+      expect(screen.getByText('Check Your Email')).toBeTruthy();
+      expect(screen.getByText(/test@example.com/)).toBeTruthy();
+      expect(screen.getByTestId('go-to-login-button')).toBeTruthy();
+    });
+
+    it('navigates to login when "Go to Sign In" is pressed', async () => {
+      mockSignUp.mockResolvedValue({
+        data: { user: { id: '123', email: 'test@example.com' } as any },
+        error: null,
+      });
+
+      render(<SignupScreen navigation={mockNavigation} />);
+
+      fireEvent.changeText(screen.getByTestId('email-input'), 'test@example.com');
+      fireEvent.changeText(screen.getByTestId('password-input'), 'password123');
+      fireEvent.changeText(screen.getByTestId('confirm-password-input'), 'password123');
+      fireEvent.press(screen.getByTestId('signup-button'));
+
+      await waitFor(() => {
+        expect(screen.getByTestId('signup-success')).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByTestId('go-to-login-button'));
+      expect(mockNavigate).toHaveBeenCalledWith('Login');
+    });
+
+    it('allows retry from success screen', async () => {
+      mockSignUp.mockResolvedValue({
+        data: { user: { id: '123', email: 'test@example.com' } as any },
+        error: null,
+      });
+
+      render(<SignupScreen navigation={mockNavigation} />);
+
+      fireEvent.changeText(screen.getByTestId('email-input'), 'test@example.com');
+      fireEvent.changeText(screen.getByTestId('password-input'), 'password123');
+      fireEvent.changeText(screen.getByTestId('confirm-password-input'), 'password123');
+      fireEvent.press(screen.getByTestId('signup-button'));
+
+      await waitFor(() => {
+        expect(screen.getByTestId('signup-success')).toBeTruthy();
+      });
+
+      // Press "Try again" link
+      fireEvent.press(screen.getByTestId('resend-link'));
+
+      // Should go back to signup form
+      await waitFor(() => {
+        expect(screen.getByTestId('signup-button')).toBeTruthy();
+      });
     });
   });
 

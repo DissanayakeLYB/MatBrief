@@ -48,6 +48,7 @@ export function SignupScreen({ navigation }: SignupScreenProps) {
   // UI state
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isSignupSuccess, setIsSignupSuccess] = useState(false);
 
   /**
    * Validate the form before submission.
@@ -106,8 +107,9 @@ export function SignupScreen({ navigation }: SignupScreenProps) {
         return;
       }
 
-      // Success! RootNavigator will automatically switch to AppNavigator
-      // because it's listening to auth state changes.
+      // Success! Show confirmation message
+      // User needs to verify email before they can sign in
+      setIsSignupSuccess(true);
     } catch (err) {
       // Handle unexpected errors (network failure, etc.)
       setError('Unable to connect. Please check your internet connection.');
@@ -122,6 +124,47 @@ export function SignupScreen({ navigation }: SignupScreenProps) {
    */
   const isButtonDisabled =
     isLoading || !email.trim() || !password || !confirmPassword;
+
+  // Show success screen after signup
+  if (isSignupSuccess) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.successContainer} testID="signup-success">
+          <View style={styles.successIcon}>
+            <Text style={styles.successIconText}>✓</Text>
+          </View>
+          <Text style={styles.successTitle}>Check Your Email</Text>
+          <Text style={styles.successMessage}>
+            We've sent a confirmation link to{'\n'}
+            <Text style={styles.successEmail}>{email}</Text>
+          </Text>
+          <Text style={styles.successHint}>
+            Click the link in your email to verify your account, then come back here to sign in.
+          </Text>
+          <Pressable
+            style={styles.successButton}
+            onPress={() => navigation.navigate('Login')}
+            testID="go-to-login-button"
+          >
+            <Text style={styles.successButtonText}>Go to Sign In</Text>
+          </Pressable>
+          <Pressable
+            style={styles.resendLink}
+            onPress={() => {
+              setIsSignupSuccess(false);
+              setError(null);
+            }}
+            testID="resend-link"
+          >
+            <Text style={styles.linkText}>
+              Didn't receive the email?{' '}
+              <Text style={styles.linkTextBold}>Try again</Text>
+            </Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -359,5 +402,70 @@ const styles = StyleSheet.create({
   linkTextBold: {
     color: '#3b82f6',
     fontWeight: '600',
+  },
+  // Success screen styles
+  successContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+  },
+  successIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#166534',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+  successIconText: {
+    fontSize: 40,
+    color: '#22c55e',
+  },
+  successTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#f8fafc',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  successMessage: {
+    fontSize: 16,
+    color: '#94a3b8',
+    textAlign: 'center',
+    marginBottom: 8,
+    lineHeight: 24,
+  },
+  successEmail: {
+    color: '#f8fafc',
+    fontWeight: '600',
+  },
+  successHint: {
+    fontSize: 14,
+    color: '#64748b',
+    textAlign: 'center',
+    marginBottom: 32,
+    lineHeight: 20,
+    paddingHorizontal: 16,
+  },
+  successButton: {
+    backgroundColor: '#3b82f6',
+    borderRadius: 8,
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 200,
+  },
+  successButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  resendLink: {
+    alignItems: 'center',
+    paddingVertical: 16,
+    marginTop: 16,
   },
 });
